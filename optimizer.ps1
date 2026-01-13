@@ -58,13 +58,11 @@ try {
     
     Write-Progress -Activity "Complete" -Completed
     
+    # ✅ ИЗМЕНЕНО: Сообщения выводятся вместе
     Write-Host "  [✓] Module loaded successfully" -ForegroundColor Green
+    Write-Host "  [*] Please wait for complete..." -ForegroundColor Yellow
     Write-Host ""
     Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
-    Write-Host ""
-    
-    # НОВОЕ: Сообщение об ожидании
-    Write-Host "  Please wait for complete..." -ForegroundColor Yellow
     Write-Host ""
     
     # Передаем переменную
