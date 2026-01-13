@@ -1,4 +1,4 @@
-# Steam Network Optimizer - Enhanced Edition
+# Steam Network Optimizer - Enhanced Edition v1.1
 
 function Show-Progress {
     param([string]$Activity, [int]$Percent)
@@ -63,13 +63,29 @@ try {
     Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
     Write-Host ""
     
-    # АВТОЗАПУСК
-    & ([scriptblock]::Create([Text.Encoding]::UTF8.GetString($r)))
+    # АВТОЗАПУСК с передачей переменной $ping
+    $scriptBlock = [scriptblock]::Create([Text.Encoding]::UTF8.GetString($r))
+    
+    # Передаем $ping в скрипт как глобальную переменную
+    $global:MaxPing = $ping
+    
+    # Выполняем и ЖДЕМ завершения
+    & $scriptBlock
+    
+    # После выполнения основного скрипта
+    Write-Host ""
+    Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
+    Write-Host "  [✓] Optimization complete!" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "  Press any key to exit..." -ForegroundColor Gray
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     
 } catch {
     Write-Progress -Activity "Error" -Completed
     Write-Host ""
     Write-Host "  ✗ Failed: $($_.Exception.Message)" -ForegroundColor Red
     Write-Host ""
+    Write-Host "  Press any key to exit..." -ForegroundColor Gray
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     exit 1
 }
