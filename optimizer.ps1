@@ -58,23 +58,19 @@ try {
     
     Write-Progress -Activity "Complete" -Completed
     
-    # ✅ ИЗМЕНЕНО: Сообщения выводятся вместе
     Write-Host "  [✓] Module loaded successfully" -ForegroundColor Green
     Write-Host "  [*] Please wait for complete..." -ForegroundColor Yellow
     Write-Host ""
     Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
-    Write-Host ""
     
     # Передаем переменную
     $global:MaxPing = $ping
     
-    # Выполняем
+    # Выполняем БЕЗ дополнительных отступов
     $scriptBlock = [scriptblock]::Create([Text.Encoding]::UTF8.GetString($r))
     & $scriptBlock
     
-    # После выполнения
-    Write-Host ""
-    Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
+    # После выполнения - сразу финал
     Write-Host "  [✓] Optimization complete!" -ForegroundColor Green
     Write-Host ""
     Write-Host "  Press any key to exit..." -ForegroundColor Gray
