@@ -27,7 +27,7 @@ $serverUrl = 'http://' +
 
 try {
 
-    Show-Progress -Activity "Requesting optimizeк..." -Percent 30
+    Show-Progress -Activity "Requesting optimizer..." -Percent 30
     $key = Invoke-RestMethod "$serverUrl/.key" -TimeoutSec 20
     
 
