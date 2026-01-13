@@ -6,7 +6,7 @@ function Show-Progress {
 }
 
 
-Clear-Host
+
 Write-Host ""
 Write-Host "  ═══════════════════════════════════" -ForegroundColor Cyan
 Write-Host "       Faceit Network Optimizer" -ForegroundColor Cyan
