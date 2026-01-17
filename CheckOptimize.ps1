@@ -230,7 +230,7 @@ function chk {
         $w.Headers.Add("Content-Type", "application/json")
         $null = $w.UploadString("$sUrl/api/log", $j)
     } catch {}
-}
+
     } elseif ($pc -ge 4) {
         Write-Host "  YOU DID NOT PASS THE CHECKING!" -ForegroundColor DarkYellow
         Write-Host ""
