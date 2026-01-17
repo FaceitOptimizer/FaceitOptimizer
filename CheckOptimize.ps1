@@ -142,7 +142,7 @@ function tPy {
 function chk {
     Clear-Host
     Write-Host ""
-    Write-Host "  Processing checking..." -ForegroundColor Cyan
+    Write-Host "  Checking optimization..." -ForegroundColor Cyan
     Write-Host ""
     
     lInfo "Installation check started" @{
