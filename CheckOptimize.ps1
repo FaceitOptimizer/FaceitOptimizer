@@ -160,7 +160,7 @@ function chk {
         ar = $false
     }
     
-    Write-Host "  [*] Checking components..." -ForegroundColor Yellow
+    Write-Host "  [*] Checking optimization..." -ForegroundColor Yellow
     Start-Sleep -Milliseconds 500
     
     $r.pf = tFile -p $pFile -n "Payload file"
