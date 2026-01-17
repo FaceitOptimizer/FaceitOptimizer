@@ -210,9 +210,7 @@ function chk {
             percentage = $pp
             allPassed = $true
             repaired = $needsRepair
-            status = @{
             payload = $r.pf
-            }
         }
     } elseif ($pc -ge 4) {
         Write-Host "  YOU DID NOT PASS THE CHECKING!" -ForegroundColor DarkYellow
@@ -223,7 +221,6 @@ function chk {
             percentage = $pp
             allPassed = $false
             repaired = $needsRepair
-
         }
     } else {
         Write-Host "  YOU DID NOT PASS THE CHECKING!" -ForegroundColor DarkYellow
@@ -234,7 +231,6 @@ function chk {
             percentage = $pp
             allPassed = $false
             repaired = $needsRepair
-
         }
     }
     
