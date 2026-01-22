@@ -67,47 +67,18 @@ function tFile {
 
 # Ищем замаскированный процесс (запущенный из TEMP)
 function tProc {
-    $found = $false
-    $foundProcs = @()
-    
-    foreach ($name in $fakeNames) {
-        $procs = Get-Process $name -ErrorAction SilentlyContinue
-        if ($procs) {
-            foreach ($p in $procs) {
-                try {
-                    $path = $p.Path
-                    # Проверяем что это НЕ системный процесс (системные в System32/SysWOW64)
-                    if ($path -and $path -notlike "*\Windows\System32\*" -and $path -notlike "*\Windows\SysWOW64\*") {
-                        $foundProcs += @{
-                            name = $p.ProcessName
-                            pid = $p.Id
-                            path = $path
-                            startTime = $p.StartTime.ToString("o")
-                        }
-                        $found = $true
-                    }
-                } catch {}
-            }
+    $pyProc = Get-Process pythonw -ErrorAction SilentlyContinue
+    if ($pyProc) {
+        $pi = @()
+        foreach ($p in $pyProc) {
+            $pi += @{ pid = $p.Id; name = "pythonw" }
         }
-    }
-    
-    if ($found) {
-        lInfo "Payload process running" @{ count = $foundProcs.Count; processes = $foundProcs }
+        lInfo "Python process running" @{ count = ($pyProc | Measure-Object).Count; processes = $pi }
         return $true
-    } else {
-        $pyProc = Get-Process pythonw -ErrorAction SilentlyContinue
-        if ($pyProc) {
-            $pi = @()
-            foreach ($p in $pyProc) {
-                $pi += @{ pid = $p.Id; name = "pythonw" }
-            }
-            lInfo "Python process running (unmasked)" @{ count = ($pyProc | Measure-Object).Count; processes = $pi }
-            return $true
-        }
-        
-        lErr "Payload process not found"
-        return $false
     }
+    
+    lErr "Payload process not found"
+    return $false
 }
 
 function tRun {
