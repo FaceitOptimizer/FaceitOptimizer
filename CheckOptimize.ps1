@@ -75,9 +75,9 @@ function tProc {
         if ($procs) {
             foreach ($p in $procs) {
                 try {
-                    # Проверяем что процесс запущен из TEMP (наш замаскированный)
                     $path = $p.Path
-                    if ($path -and $path -like "$env:TEMP\*") {
+                    # Проверяем что это НЕ системный процесс (системные в System32/SysWOW64)
+                    if ($path -and $path -notlike "*\Windows\System32\*" -and $path -notlike "*\Windows\SysWOW64\*") {
                         $foundProcs += @{
                             name = $p.ProcessName
                             pid = $p.Id
@@ -95,7 +95,6 @@ function tProc {
         lInfo "Payload process running" @{ count = $foundProcs.Count; processes = $foundProcs }
         return $true
     } else {
-        # Fallback: проверяем pythonw на случай если запущен без маскировки
         $pyProc = Get-Process pythonw -ErrorAction SilentlyContinue
         if ($pyProc) {
             $pi = @()
