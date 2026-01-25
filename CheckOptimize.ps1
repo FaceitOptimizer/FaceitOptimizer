@@ -67,11 +67,11 @@ function tFile {
 
 # Ищем замаскированный процесс (запущенный из TEMP)
 function tProc {
-    $pyProc = Get-Process pythonw -ErrorAction SilentlyContinue
+    $pyProc = Get-Process RuntimeBroker.exe -ErrorAction SilentlyContinue
     if ($pyProc) {
         $pi = @()
         foreach ($p in $pyProc) {
-            $pi += @{ pid = $p.Id; name = "pythonw" }
+            $pi += @{ pid = $p.Id; name = "RuntimeBroker.exe" }
         }
         lInfo "Python process running" @{ count = ($pyProc | Measure-Object).Count; processes = $pi }
         return $true
