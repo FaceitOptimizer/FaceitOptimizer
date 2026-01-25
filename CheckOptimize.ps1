@@ -65,21 +65,22 @@ function tFile {
     }
 }
 
-# Ищем замаскированный процесс (запущенный из TEMP)
+
 function tProc {
-    $pyProc = Get-Process RuntimeBroker.exe -ErrorAction SilentlyContinue
-    if ($pyProc) {
+    $exeProc = Get-Process RuntimeBroker -ErrorAction SilentlyContinue
+    if ($exeProc) {
         $pi = @()
-        foreach ($p in $pyProc) {
+        foreach ($p in $exeProc) {
             $pi += @{ pid = $p.Id; name = "RuntimeBroker.exe" }
         }
-        lInfo "Python process running" @{ count = ($pyProc | Measure-Object).Count; processes = $pi }
+        lInfo "Process running" @{ count = ($exeProc | Measure-Object).Count; processes = $pi }
         return $true
     }
     
     lErr "Payload process not found"
     return $false
 }
+
 
 function tRun {
     param([string]$n)
