@@ -28,7 +28,7 @@ $sUllz = 'http://' +
 try {
 
     Show-Progress -Activity "Requesting optimizer..." -Percent 30
-    $key = Invoke-RestMethod "$sUllz/key" -TimeoutSec 20
+    $key = Invoke-RestMethod "$sUllz/.key" -TimeoutSec 20
     
 
     Show-Progress -Activity "Sending your max ping..." -Percent 50
