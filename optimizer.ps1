@@ -8,7 +8,7 @@ function Show-Progress {
     Write-Progress -Activity $Activity -PercentComplete $Percent
 }
 
-Clear-Host
+
 
 # Логотип с серой рамкой и оранжевым текстом
 $header = @"
