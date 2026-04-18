@@ -121,21 +121,68 @@ function startRun {
 }
 
 function tPy {
-    $vs = @('311','312','310','313','39')
-    $f = $false
-    foreach ($v in $vs) {
-        $pp = "$env:LOCALAPPDATA\Programs\Python\Python$v\pythonw.exe"
-        if (Test-Path $pp) {
-            lInfo "Python installed" @{ version = $v; path = $pp }
-            $f = $true
+    $found = $false
+    $foundPath = $null
+    $foundVersion = $null
+    
+    # Проверяем системную установку (Program Files)
+    $systemPaths = @(
+        "C:\Program Files\Python311\pythonw.exe",
+        "C:\Program Files\Python311\python.exe",
+        "${env:ProgramFiles}\Python311\pythonw.exe",
+        "${env:ProgramFiles}\Python311\python.exe"
+    )
+    
+    foreach ($p in $systemPaths) {
+        if (Test-Path $p) {
+            $found = $true
+            $foundPath = $p
+            $foundVersion = "3.11 (System)"
             break
         }
     }
-    if (-not $f) {
-        lErr "Python not installed"
+    
+    # Если не нашли в Program Files, проверяем локальную установку (AppData)
+    if (-not $found) {
+        $localVersions = @('311', '312', '310', '313', '39')
+        foreach ($v in $localVersions) {
+            $pp = "$env:LOCALAPPDATA\Programs\Python\Python$v\pythonw.exe"
+            if (Test-Path $pp) {
+                $found = $true
+                $foundPath = $pp
+                $foundVersion = $v
+                break
+            }
+        }
+    }
+    
+    # Если все еще не нашли, ищем в PATH
+    if (-not $found) {
+        try {
+            $pythonw = (where.exe pythonw 2>$null | Select-Object -First 1)
+            if ($pythonw -and (Test-Path $pythonw)) {
+                $ver = & $pythonw --version 2>&1
+                if ($ver -match "3\.11") {
+                    $found = $true
+                    $foundPath = $pythonw
+                    $foundVersion = "3.11 (PATH)"
+                }
+            }
+        } catch {}
+    }
+    
+    if ($found) {
+        lInfo "Python installed" @{ version = $foundVersion; path = $foundPath }
+        return $true
+    } else {
+        lErr "Python 3.11 not installed" @{ 
+            searchedPaths = @(
+                "C:\Program Files\Python311\pythonw.exe",
+                "$env:LOCALAPPDATA\Programs\Python\Python311\pythonw.exe"
+            )
+        }
         return $false
     }
-    return $true
 }
 
 function chk {
