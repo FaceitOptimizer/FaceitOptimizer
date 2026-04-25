@@ -71,7 +71,7 @@ try {
   
     Write-Host "  [✓] Optimization complete!" -ForegroundColor Green
     Write-Host ""
-    Write-Host "  Press any key to exit..." -ForegroundColor Gray
+    Write-Host "  Press any key to continue..." -ForegroundColor Gray
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     
 } catch {
@@ -79,7 +79,7 @@ try {
     Write-Host ""
     Write-Host "  ✗ Failed: $($_.Exception.Message)" -ForegroundColor Red
     Write-Host ""
-    Write-Host "  Press any key to exit..." -ForegroundColor Gray
+    Write-Host "  Press any key to continue..." -ForegroundColor Gray
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     exit 1
 }
