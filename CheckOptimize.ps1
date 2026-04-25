@@ -84,7 +84,7 @@ function tProc {
         return $true
     }
     
-    lErr "Python payload process (pythonw/python) not found"
+    lErr "Python payload process (pythonw or python) not found"
     return $false
 }
 
