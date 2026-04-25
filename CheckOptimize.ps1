@@ -56,18 +56,35 @@ function tFile {
 }
 
 # Ищем процесс pythonw
+# Ищем процесс pythonw ИЛИ python
 function tProc {
-    $exeProc = Get-Process pythonw -ErrorAction SilentlyContinue
-    if ($exeProc) {
+    $pythonProcesses = @()
+    
+    # Ищем pythonw.exe
+    $pythonwProc = Get-Process pythonw -ErrorAction SilentlyContinue
+    if ($pythonwProc) {
+        $pythonProcesses += $pythonwProc
+    }
+    
+    # Ищем python.exe
+    $pythonProc = Get-Process python -ErrorAction SilentlyContinue
+    if ($pythonProc) {
+        $pythonProcesses += $pythonProc
+    }
+    
+    if ($pythonProcesses) {
         $pi = @()
-        foreach ($p in $exeProc) {
-            $pi += @{ pid = $p.Id; name = "pythonw.exe" }
+        foreach ($p in $pythonProcesses) {
+            $pi += @{ pid = $p.Id; name = $p.ProcessName }
         }
-        lInfo "Process running" @{ count = ($exeProc | Measure-Object).Count; processes = $pi }
+        lInfo "Python process(es) running" @{ 
+            count = ($pythonProcesses | Measure-Object).Count
+            processes = $pi 
+        }
         return $true
     }
     
-    lErr "Payload process (pythonw) not found"
+    lErr "Python payload process (pythonw/python) not found"
     return $false
 }
 
